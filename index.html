@@ -51,6 +51,36 @@
       gap: 12px;
     }
 
+    .headline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .lang-toggle {
+      display: inline-flex;
+      gap: 6px;
+      width: fit-content;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,253,248,.86);
+    }
+
+    .lang-toggle button {
+      min-height: 34px;
+      border: 0;
+      border-radius: 6px;
+      padding: 0 10px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .lang-toggle button.active {
+      background: var(--sage-dark);
+      color: #fff;
+    }
+
     h1 {
       margin: 0;
       font-size: clamp(30px, 8vw, 58px);
@@ -395,11 +425,15 @@
   <main class="app">
     <section class="top">
       <div class="title-row">
-        <div>
-          <h1>Aperitivo Vivarini 5</h1>
-          <p class="sub">Il condominio si organizza per il 2 luglio: 19 famiglie, circa 38 persone. Scegli cosa porti, così il tavolo resta equilibrato tra bicchieri pieni e cose buone da mordere.</p>
+        <div class="headline">
+          <div class="lang-toggle" aria-label="Language">
+            <button class="active" data-lang="it" type="button">IT</button>
+            <button data-lang="en" type="button">EN</button>
+          </div>
+          <h1 id="appTitle">Aperitivo Vivarini 5</h1>
+          <p class="sub" id="appSubtitle"></p>
         </div>
-        <div class="date-badge"><span>2</span><small>luglio</small></div>
+        <div class="date-badge"><span>2</span><small id="dateMonth">luglio</small></div>
       </div>
       <div class="stats" id="stats"></div>
     </section>
@@ -407,7 +441,7 @@
     <section class="layout">
       <aside class="side">
         <div class="panel balance">
-          <h2>Bilanciamento</h2>
+          <h2 id="balanceTitle">Bilanciamento</h2>
           <div class="bar" aria-label="Equilibrio tra bere, mangiare ed extra">
             <span class="drink" id="barDrink"></span>
             <span class="food" id="barFood"></span>
@@ -417,22 +451,22 @@
         </div>
 
         <div class="panel" style="margin-top:10px">
-          <h2>Suggerimenti</h2>
+          <h2 id="tipsTitle">Suggerimenti</h2>
           <ul class="tips" id="tips"></ul>
         </div>
 
         <div class="panel" style="margin-top:10px">
-          <h2>Aggiungi proposta</h2>
+          <h2 id="addTitle">Aggiungi proposta</h2>
           <form class="form" id="addForm">
-            <input name="name" placeholder="Nome cosa da portare" required>
-            <input name="description" placeholder="Quantità o dettaglio" required>
+            <input name="name" id="nameInput" placeholder="Nome cosa da portare" required>
+            <input name="description" id="descriptionInput" placeholder="Quantità o dettaglio" required>
             <select name="category" required>
-              <option value="bere">Bere</option>
-              <option value="salato">Salato</option>
-              <option value="dolce">Dolce/frutta</option>
-              <option value="extra">Extra utili</option>
+              <option value="bere" id="optionBere">Bere</option>
+              <option value="salato" id="optionSalato">Salato</option>
+              <option value="dolce" id="optionDolce">Dolce/frutta</option>
+              <option value="extra" id="optionExtra">Extra utili</option>
             </select>
-            <button class="primary" type="submit">＋ Aggiungi</button>
+            <button class="primary" id="addButton" type="submit">＋ Aggiungi</button>
           </form>
           <div class="footer-actions">
             <button class="ghost" id="shareBtn" type="button">↗ Condividi stato</button>
@@ -445,7 +479,7 @@
         <div class="toolbar">
           <div class="tabs" id="tabs"></div>
           <div class="actions">
-            <label class="switch"><input type="checkbox" id="freeOnly"> Solo libere</label>
+            <label class="switch"><input type="checkbox" id="freeOnly"> <span id="freeOnlyLabel">Solo libere</span></label>
             <button class="ghost" id="resetBtn" type="button">↺ Riparti pulito</button>
           </div>
         </div>
@@ -456,59 +490,214 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const STORAGE_KEY = "aperitivo-condominio-v3";
-    const categories = {
-      tutti: "Tutto",
-      bere: "Bere",
-      salato: "Salato",
-      dolce: "Dolce/frutta",
-      extra: "Extra"
+    const STORAGE_KEY = "aperitivo-condominio-v4";
+    const labels = {
+      it: {
+        title: "Aperitivo Vivarini 5",
+        subtitle: "Ci sono 19 conferme, ma stimiamo che ogni conferma venga in 2 o piu persone. Probabilmente si aggiungera anche qualcuno che non ha votato ma ci sara lo stesso.",
+        month: "luglio",
+        balance: "Bilanciamento",
+        tips: "Suggerimenti",
+        add: "Aggiungi proposta",
+        namePlaceholder: "Nome cosa da portare",
+        descriptionPlaceholder: "Quantita o dettaglio",
+        addButton: "＋ Aggiungi",
+        share: "↗ Condividi stato",
+        copy: "⧉ Copia riepilogo",
+        freeOnly: "Solo libere",
+        reset: "↺ Riparti pulito",
+        bring: "Lo porto io",
+        broughtBy: "Porta",
+        free: "Libera",
+        writeName: "Scrivi prima il nome o la famiglia.",
+        marked: "Perfetto, segnato.",
+        freed: "Voce liberata.",
+        added: "Proposta aggiunta.",
+        copiedLink: "Link con stato copiato.",
+        copiedSummary: "Riepilogo copiato.",
+        cleanConfirm: "Vuoi ripartire dalla lista iniziale su questo dispositivo?",
+        emptyTitle: "Niente qui",
+        emptyText: "Cambia filtro o aggiungi una proposta.",
+        stillFree: "Ancora liberi:",
+        categories: { tutti: "Tutto", bere: "Bere", salato: "Salato", dolce: "Dolce/frutta", extra: "Extra" },
+        stats: {
+          families: ["Conferme", "19", "2+ persone per conferma"],
+          assigned: "Assegnati",
+          totalItems: "voci totali",
+          free: "Ancora liberi",
+          choose: "da scegliere",
+          active: "Famiglie attive",
+          activeHint: "hanno gia preso qualcosa"
+        },
+        tipsText: {
+          water: "Manca l'acqua: prima delle birre eroiche, mettiamola in sicurezza.",
+          soft: "Serve una quota analcolica: bibite o succhi fanno felici anche chi guida.",
+          ice: "Il ghiaccio e fondamentale: senza, il 2 luglio diventa tiepido in fretta.",
+          cool: "Servono borse frigo o un frigobar portatile: il freddo sara il vero MVP.",
+          salty: "Manca una base salata facile: focaccia, patatine o taralli tengono insieme la serata.",
+          plates: "Extra da coprire: bicchieri, piatti e posate evitano il caos sul finale.",
+          trash: "Aggiungiamo sacchi spazzatura: gesto poco poetico, utilissimo.",
+          drinkHeavy: "Bere molto coperto: ora conviene spingere su salato, formaggi, focacce e cose fatte in casa.",
+          foodHeavy: "Cibo bello presente: mancano forse bevande fredde e qualcosa di fresco.",
+          good: "Equilibrio buono: continuate cosi, sta venendo un aperitivo serio."
+        }
+      },
+      en: {
+        title: "Vivarini 5 Aperitivo",
+        subtitle: "We have 19 confirmations, but we expect each confirmation to mean 2 or more people. A few people who did not vote may also show up anyway.",
+        month: "July",
+        balance: "Balance",
+        tips: "Suggestions",
+        add: "Add proposal",
+        namePlaceholder: "Thing to bring",
+        descriptionPlaceholder: "Quantity or detail",
+        addButton: "＋ Add",
+        share: "↗ Share status",
+        copy: "⧉ Copy summary",
+        freeOnly: "Free only",
+        reset: "↺ Start fresh",
+        bring: "I'll bring it",
+        broughtBy: "Bringing",
+        free: "Release",
+        writeName: "Add your name or family first.",
+        marked: "Done, saved.",
+        freed: "Item released.",
+        added: "Proposal added.",
+        copiedLink: "Status link copied.",
+        copiedSummary: "Summary copied.",
+        cleanConfirm: "Reset this device to the starting list?",
+        emptyTitle: "Nothing here",
+        emptyText: "Change filter or add a proposal.",
+        stillFree: "Still free:",
+        categories: { tutti: "All", bere: "Drinks", salato: "Savory", dolce: "Dessert/fruit", extra: "Useful extras" },
+        stats: {
+          families: ["Confirmations", "19", "2+ people per confirmation"],
+          assigned: "Assigned",
+          totalItems: "total items",
+          free: "Still free",
+          choose: "to choose",
+          active: "Active families",
+          activeHint: "already picked something"
+        },
+        tipsText: {
+          water: "Water is still missing: before heroic beers, let's make that safe.",
+          soft: "We need non-alcoholic drinks too: sodas or juices help drivers and non-drinkers.",
+          ice: "Ice is essential: without it, July 2 gets warm fast.",
+          cool: "Cooler bags or a portable mini-fridge would help a lot: cold drinks are the real MVP.",
+          salty: "We need an easy savory base: focaccia, chips or crackers hold the evening together.",
+          plates: "Useful extras still needed: cups, plates and cutlery prevent end-of-night chaos.",
+          trash: "Let's add trash bags: not glamorous, very useful.",
+          drinkHeavy: "Drinks are well covered: better to focus on savory food, cheese, focaccia and homemade dishes.",
+          foodHeavy: "Food is looking good: maybe add cold drinks and something fresh.",
+          good: "Good balance: this is turning into a proper aperitivo."
+        }
+      }
+    };
+
+    const categories = labels.it.categories;
+
+    const itemTexts = {
+      "beer-light-1": ["Birra chiara - quota 1", "Light beer - share 1", "8 lattine/bottiglie", "8 cans/bottles"],
+      "beer-light-2": ["Birra chiara - quota 2", "Light beer - share 2", "8 lattine/bottiglie", "8 cans/bottles"],
+      "beer-ipa": ["Birra IPA o artigianale", "IPA or craft beer", "4-6 bottiglie", "4-6 bottles"],
+      "white-wine-1": ["Vino bianco fresco - quota 1", "Chilled white wine - share 1", "1-2 bottiglie", "1-2 bottles"],
+      "white-wine-2": ["Vino bianco fresco - quota 2", "Chilled white wine - share 2", "1-2 bottiglie", "1-2 bottles"],
+      "spritz": ["Spritz gia pronto e fresco", "Ready-made chilled spritz", "In caraffe, pronto da versare", "In carafes, ready to pour"],
+      "water": ["Acqua naturale/frizzante", "Still/sparkling water", "24 piccole o 12 grandi", "24 small or 12 large bottles"],
+      "soft": ["Bibite analcoliche", "Soft drinks", "Cola, aranciata, tonica", "Cola, orange soda, tonic"],
+      "juice": ["Succhi/analcolico", "Juices/non-alcoholic drinks", "Per chi non beve", "For non-drinkers"],
+      "ice": ["Ghiaccio", "Ice", "4-5 sacchi", "4-5 bags"],
+      "focaccia": ["Focacce/pizze tagliate", "Focaccia/sliced pizza", "4 teglie", "4 trays"],
+      "chips": ["Patatine e snack", "Chips and snacks", "Mix grande", "Large mix"],
+      "crackers": ["Taralli/grissini/crackers", "Taralli/breadsticks/crackers", "Assortimento", "Assorted"],
+      "salumi": ["Tagliere salumi", "Cold cuts board", "Porzione per gruppo", "Group portion"],
+      "cheese": ["Tagliere formaggi", "Cheese board", "Porzione per gruppo", "Group portion"],
+      "veggies": ["Verdure crude + hummus/salse", "Raw vegetables + hummus/dips", "Una bella base fresca", "A fresh base"],
+      "olives": ["Olive/sottoli/stuzzichini", "Olives/pickles/nibbles", "Ciotole miste", "Mixed bowls"],
+      "sandwiches": ["Tramezzini o panini piccoli", "Small sandwiches", "Da prendere al volo", "Easy to grab"],
+      "home-savory-1": ["Cucina libera salata", "Homemade savory slot", "Slot per chi vuole preparare qualcosa", "For anyone who wants to cook something"],
+      "home-savory-2": ["Cucina libera salata", "Homemade savory slot", "Altro slot fatto in casa", "Another homemade slot"],
+      "fruit": ["Frutta fresca gia tagliata", "Fresh sliced fruit", "Vassoi pronti", "Ready trays"],
+      "cookies": ["Biscotti/dolcetti secchi", "Cookies/dry sweets", "Qualcosa da fine serata", "Something for the end"],
+      "home-dessert": ["Dolce fatto in casa", "Homemade dessert", "Slot libero per torte o dolci", "Open slot for cakes or desserts"],
+      "kitchen-jolly": ["Jolly cucina", "Kitchen wildcard", "Qualcosa di tuo, dolce o salato", "Anything homemade, sweet or savory"],
+      "plates": ["Bicchieri, piatti e posate", "Cups, plates and cutlery", "Compostabili", "Compostable"],
+      "napkins": ["Tovaglioli e carta cucina", "Napkins and kitchen paper", "Pacchi grandi", "Large packs"],
+      "trash": ["Sacchi spazzatura", "Trash bags", "Indifferenziata + plastica", "Mixed waste + plastic"],
+      "cooler-1": ["Borsa frigo", "Cooler bag", "Una o piu borse frigo con siberini", "One or more cooler bags with ice packs"],
+      "cooler-2": ["Borsa frigo extra", "Extra cooler bag", "Meglio averne piu di una", "More than one would be ideal"],
+      "portable-fridge": ["Frigobar portatile", "Portable mini-fridge", "Se qualcuno ne ha uno, super utile", "Very useful if someone has one"],
+      "speaker": ["Speaker/cassa bluetooth", "Bluetooth speaker", "Carica, con playlist", "Charged, with playlist"],
+      "opener": ["Apribottiglie e cavatappi", "Bottle opener and corkscrew", "Da non dimenticare", "Do not forget"]
     };
 
     const initialItems = [
-      ["Birra chiara - quota 1", "8 lattine/bottiglie", 10, "bere"],
-      ["Birra chiara - quota 2", "8 lattine/bottiglie", 10, "bere"],
-      ["Birra IPA o artigianale", "4-6 bottiglie", 12, "bere"],
-      ["Vino bianco fresco - quota 1", "1-2 bottiglie", 12, "bere"],
-      ["Vino bianco fresco - quota 2", "1-2 bottiglie", 12, "bere"],
-      ["Spritz già pronto e fresco", "In caraffe, pronto da versare", 35, "bere"],
-      ["Acqua naturale/frizzante", "24 piccole o 12 grandi", 15, "bere"],
-      ["Bibite analcoliche", "Cola, aranciata, tonica", 18, "bere"],
-      ["Succhi/analcolico", "Per chi non beve", 12, "bere"],
-      ["Ghiaccio", "4-5 sacchi", 12, "bere"],
-      ["Focacce/pizze tagliate", "4 teglie", 35, "salato"],
-      ["Patatine e snack", "Mix grande", 18, "salato"],
-      ["Taralli/grissini/crackers", "Assortimento", 14, "salato"],
-      ["Tagliere salumi", "Porzione per gruppo", 30, "salato"],
-      ["Tagliere formaggi", "Porzione per gruppo", 25, "salato"],
-      ["Verdure crude + hummus/salse", "Una bella base fresca", 20, "salato"],
-      ["Olive/sottoli/stuzzichini", "Ciotole miste", 18, "salato"],
-      ["Tramezzini o panini piccoli", "Da prendere al volo", 25, "salato"],
-      ["Cucina libera salata", "Slot per chi vuole preparare qualcosa", 15, "salato"],
-      ["Cucina libera salata", "Altro slot fatto in casa", 15, "salato"],
-      ["Frutta fresca già tagliata", "Vassoi pronti", 20, "dolce"],
-      ["Biscotti/dolcetti secchi", "Qualcosa da fine serata", 15, "dolce"],
-      ["Dolce fatto in casa", "Slot libero per torte o dolci", 15, "dolce"],
-      ["Jolly cucina", "Qualcosa di tuo, dolce o salato", 15, "salato"],
-      ["Bicchieri, piatti e posate", "Compostabili", 18, "extra"],
-      ["Tovaglioli e carta cucina", "Pacchi grandi", 8, "extra"],
-      ["Sacchi spazzatura", "Indifferenziata + plastica", 6, "extra"],
-      ["Speaker/cassa bluetooth", "Carica, con playlist", 0, "extra", "Francesco"],
-      ["Apribottiglie e cavatappi", "Da non dimenticare", 0, "extra", "Francesco"]
+      ["beer-light-1", 10, "bere"],
+      ["beer-light-2", 10, "bere"],
+      ["beer-ipa", 12, "bere"],
+      ["white-wine-1", 12, "bere"],
+      ["white-wine-2", 12, "bere"],
+      ["spritz", 35, "bere"],
+      ["water", 15, "bere"],
+      ["soft", 18, "bere"],
+      ["juice", 12, "bere"],
+      ["ice", 12, "bere"],
+      ["focaccia", 35, "salato"],
+      ["chips", 18, "salato"],
+      ["crackers", 14, "salato"],
+      ["salumi", 30, "salato"],
+      ["cheese", 25, "salato"],
+      ["veggies", 20, "salato"],
+      ["olives", 18, "salato"],
+      ["sandwiches", 25, "salato"],
+      ["home-savory-1", 15, "salato"],
+      ["home-savory-2", 15, "salato"],
+      ["fruit", 20, "dolce"],
+      ["cookies", 15, "dolce"],
+      ["home-dessert", 15, "dolce"],
+      ["kitchen-jolly", 15, "salato"],
+      ["plates", 18, "extra"],
+      ["napkins", 8, "extra"],
+      ["trash", 6, "extra"],
+      ["cooler-1", 0, "extra"],
+      ["cooler-2", 0, "extra"],
+      ["portable-fridge", 0, "extra"],
+      ["speaker", 0, "extra", "Francesco"],
+      ["opener", 0, "extra", "Francesco"]
     ].map((row, index) => ({
       id: "item-" + index,
-      name: row[0],
-      description: row[1],
-      budget: row[2],
-      category: row[3],
-      takenBy: row[4] || ""
+      textKey: row[0],
+      name: itemTexts[row[0]][0],
+      nameEn: itemTexts[row[0]][1],
+      description: itemTexts[row[0]][2],
+      descriptionEn: itemTexts[row[0]][3],
+      budget: row[1],
+      category: row[2],
+      takenBy: row[3] || ""
     }));
 
     let state = {
+      lang: localStorage.getItem("aperitivo-lang") || "it",
       activeCategory: "tutti",
       freeOnly: false,
       items: loadItems()
     };
+
+    function l() {
+      return labels[state.lang] || labels.it;
+    }
+
+    function itemName(item) {
+      return state.lang === "en" ? (item.nameEn || item.name) : item.name;
+    }
+
+    function itemDescription(item) {
+      return state.lang === "en" ? (item.descriptionEn || item.description) : item.description;
+    }
+
+    function categoryLabel(category) {
+      return l().categories[category] || category;
+    }
 
     function loadItems() {
       const fromUrl = new URLSearchParams(location.search).get("stato");
@@ -559,10 +748,10 @@
       const families = new Set(taken.map(item => item.takenBy.trim().toLowerCase())).size;
       const free = state.items.length - taken.length;
       const stats = [
-        ["Famiglie", "19", "circa 38 persone"],
-        ["Assegnati", String(taken.length), state.items.length + " voci totali"],
-        ["Ancora liberi", String(free), "da scegliere"],
-        ["Famiglie attive", String(families), "hanno già preso qualcosa"]
+        l().stats.families,
+        [l().stats.assigned, String(taken.length), state.items.length + " " + l().stats.totalItems],
+        [l().stats.free, String(free), l().stats.choose],
+        [l().stats.active, String(families), l().stats.activeHint]
       ];
       document.getElementById("stats").innerHTML = stats.map(stat => `
         <div class="stat">
@@ -580,14 +769,17 @@
       document.getElementById("barFood").style.width = (groups.food / total * 100) + "%";
       document.getElementById("barExtra").style.width = (groups.extra / total * 100) + "%";
       document.getElementById("legend").innerHTML = `
-        <span><i class="dot" style="background:var(--blue)"></i>Bere ${Math.round(groups.drink / total * 100)}%</span>
-        <span><i class="dot" style="background:var(--coral)"></i>Mangiare ${Math.round(groups.food / total * 100)}%</span>
-        <span><i class="dot" style="background:var(--sage)"></i>Extra ${Math.round(groups.extra / total * 100)}%</span>
+        <span><i class="dot" style="background:var(--blue)"></i>${categoryLabel("bere")} ${Math.round(groups.drink / total * 100)}%</span>
+        <span><i class="dot" style="background:var(--coral)"></i>${state.lang === "en" ? "Food" : "Mangiare"} ${Math.round(groups.food / total * 100)}%</span>
+        <span><i class="dot" style="background:var(--sage)"></i>${categoryLabel("extra")} ${Math.round(groups.extra / total * 100)}%</span>
       `;
     }
 
     function hasTaken(match) {
-      return takenItems().some(item => match(item.name.toLowerCase(), item.description.toLowerCase(), item.category));
+      return takenItems().some(item => {
+        const haystack = [item.name, item.nameEn, item.description, item.descriptionEn].join(" ").toLowerCase();
+        return match(haystack, item.category);
+      });
     }
 
     function renderTips() {
@@ -596,23 +788,25 @@
       const drinkRatio = groups.drink / total;
       const foodRatio = groups.food / total;
       const tips = [];
+      const tip = l().tipsText;
 
-      if (!hasTaken((name) => name.includes("acqua"))) tips.push("Manca l'acqua: prima delle birre eroiche, mettiamola in sicurezza.");
-      if (!hasTaken((name, desc) => name.includes("analcolico") || desc.includes("analcolico") || name.includes("bibite"))) tips.push("Serve una quota analcolica: bibite o succhi fanno felici anche chi guida.");
-      if (!hasTaken((name) => name.includes("ghiaccio"))) tips.push("Il ghiaccio è fondamentale: senza, il 2 luglio diventa tiepido in fretta.");
-      if (!hasTaken((name) => name.includes("focacce") || name.includes("snack") || name.includes("taralli"))) tips.push("Manca una base salata facile: focaccia, patatine o taralli tengono insieme la serata.");
-      if (!hasTaken((name) => name.includes("bicchieri") || name.includes("piatti"))) tips.push("Extra da coprire: bicchieri, piatti e posate evitano il caos sul finale.");
-      if (!hasTaken((name) => name.includes("sacchi"))) tips.push("Aggiungiamo sacchi spazzatura: gesto poco poetico, utilissimo.");
-      if (drinkRatio > .58 && groups.drink > 60) tips.push("Bere molto coperto: ora conviene spingere su salato, formaggi, focacce e verdure.");
-      if (foodRatio > .62 && groups.food > 70) tips.push("Cibo bello presente: mancano forse bevande fredde e qualcosa di fresco.");
-      if (tips.length === 0) tips.push("Equilibrio buono: continuate così, sta venendo un aperitivo serio.");
+      if (!hasTaken((text) => text.includes("acqua") || text.includes("water"))) tips.push(tip.water);
+      if (!hasTaken((text) => text.includes("analcolico") || text.includes("bibite") || text.includes("soft") || text.includes("juice"))) tips.push(tip.soft);
+      if (!hasTaken((text) => text.includes("ghiaccio") || text.includes("ice"))) tips.push(tip.ice);
+      if (!hasTaken((text) => text.includes("borsa frigo") || text.includes("frigobar") || text.includes("cooler") || text.includes("mini-fridge"))) tips.push(tip.cool);
+      if (!hasTaken((text) => text.includes("focacce") || text.includes("snack") || text.includes("taralli") || text.includes("focaccia") || text.includes("chips") || text.includes("crackers"))) tips.push(tip.salty);
+      if (!hasTaken((text) => text.includes("bicchieri") || text.includes("piatti") || text.includes("cups") || text.includes("plates"))) tips.push(tip.plates);
+      if (!hasTaken((text) => text.includes("sacchi") || text.includes("trash"))) tips.push(tip.trash);
+      if (drinkRatio > .58 && groups.drink > 60) tips.push(tip.drinkHeavy);
+      if (foodRatio > .62 && groups.food > 70) tips.push(tip.foodHeavy);
+      if (tips.length === 0) tips.push(tip.good);
 
       document.getElementById("tips").innerHTML = tips.slice(0, 5).map(tip => `<li>${tip}</li>`).join("");
     }
 
     function renderTabs() {
       document.getElementById("tabs").innerHTML = Object.entries(categories).map(([key, label]) => `
-        <button class="tab ${state.activeCategory === key ? "active" : ""}" data-tab="${key}" type="button">${label}</button>
+        <button class="tab ${state.activeCategory === key ? "active" : ""}" data-tab="${key}" type="button">${categoryLabel(key)}</button>
       `).join("");
     }
 
@@ -632,27 +826,53 @@
           <article class="item ${taken ? "taken" : ""}" data-category="${item.category}">
             <div class="item-head">
               <div>
-                <h3>${item.name}</h3>
-                <p>${categories[item.category]} · ${item.description}</p>
+                <h3>${itemName(item)}</h3>
+                <p>${categoryLabel(item.category)} · ${itemDescription(item)}</p>
               </div>
             </div>
             ${taken ? `
               <div class="taken-by">
-                <span>✓ Porta: ${taken}</span>
-                <button class="danger mini" data-free="${item.id}" type="button">Libera</button>
+                <span>✓ ${l().broughtBy}: ${taken}</span>
+                <button class="danger mini" data-free="${item.id}" type="button">${l().free}</button>
               </div>
             ` : `
               <div class="claim">
-                <input data-name="${item.id}" placeholder="Il tuo nome / famiglia">
-                <button class="primary" data-claim="${item.id}" type="button">Lo porto io</button>
+                <input data-name="${item.id}" placeholder="${state.lang === "en" ? "Your name / family" : "Il tuo nome / famiglia"}">
+                <button class="primary" data-claim="${item.id}" type="button">${l().bring}</button>
               </div>
             `}
           </article>
         `;
-      }).join("") || `<div class="panel"><h2>Niente qui</h2><p class="sub">Cambia filtro o aggiungi una proposta.</p></div>`;
+      }).join("") || `<div class="panel"><h2>${l().emptyTitle}</h2><p class="sub">${l().emptyText}</p></div>`;
+    }
+
+    function renderStaticText() {
+      document.documentElement.lang = state.lang;
+      document.title = state.lang === "en" ? "Vivarini 5 Aperitivo - July 2" : "Aperitivo Vivarini 5 - 2 luglio";
+      document.getElementById("appTitle").textContent = l().title;
+      document.getElementById("appSubtitle").textContent = l().subtitle;
+      document.getElementById("dateMonth").textContent = l().month;
+      document.getElementById("balanceTitle").textContent = l().balance;
+      document.getElementById("tipsTitle").textContent = l().tips;
+      document.getElementById("addTitle").textContent = l().add;
+      document.getElementById("nameInput").placeholder = l().namePlaceholder;
+      document.getElementById("descriptionInput").placeholder = l().descriptionPlaceholder;
+      document.getElementById("optionBere").textContent = categoryLabel("bere");
+      document.getElementById("optionSalato").textContent = categoryLabel("salato");
+      document.getElementById("optionDolce").textContent = categoryLabel("dolce");
+      document.getElementById("optionExtra").textContent = categoryLabel("extra");
+      document.getElementById("addButton").textContent = l().addButton;
+      document.getElementById("shareBtn").textContent = l().share;
+      document.getElementById("copyBtn").textContent = l().copy;
+      document.getElementById("freeOnlyLabel").textContent = l().freeOnly;
+      document.getElementById("resetBtn").textContent = l().reset;
+      document.querySelectorAll("[data-lang]").forEach(button => {
+        button.classList.toggle("active", button.dataset.lang === state.lang);
+      });
     }
 
     function render() {
+      renderStaticText();
       renderStats();
       renderBalance();
       renderTips();
@@ -672,18 +892,18 @@
       const input = document.querySelector(`[data-name="${id}"]`);
       const name = input ? input.value.trim() : "";
       if (!name) {
-        toast("Scrivi prima il nome o la famiglia.");
+        toast(l().writeName);
         return;
       }
       state.items = state.items.map(item => item.id === id ? { ...item, takenBy: name } : item);
       save();
-      toast("Perfetto, segnato.");
+      toast(l().marked);
     }
 
     function free(id) {
       state.items = state.items.map(item => item.id === id ? { ...item, takenBy: "" } : item);
       save();
-      toast("Voce liberata.");
+      toast(l().freed);
     }
 
     function shareUrl() {
@@ -699,7 +919,7 @@
         await navigator.clipboard.writeText(text);
         toast(message);
       } catch (error) {
-        prompt("Copia questo testo", text);
+        prompt(state.lang === "en" ? "Copy this text" : "Copia questo testo", text);
       }
     }
 
@@ -707,8 +927,14 @@
       const tab = event.target.closest("[data-tab]");
       const claimBtn = event.target.closest("[data-claim]");
       const freeBtn = event.target.closest("[data-free]");
+      const langBtn = event.target.closest("[data-lang]");
       if (tab) {
         state.activeCategory = tab.dataset.tab;
+        render();
+      }
+      if (langBtn) {
+        state.lang = langBtn.dataset.lang;
+        localStorage.setItem("aperitivo-lang", state.lang);
         render();
       }
       if (claimBtn) claim(claimBtn.dataset.claim);
@@ -726,41 +952,43 @@
       state.items = [{
         id: "custom-" + Date.now(),
         name: String(data.get("name")).trim(),
+        nameEn: String(data.get("name")).trim(),
         description: String(data.get("description")).trim(),
+        descriptionEn: String(data.get("description")).trim(),
         budget: defaultBudgetFor(String(data.get("category"))),
         category: String(data.get("category")),
         takenBy: ""
       }, ...state.items];
       event.currentTarget.reset();
       save();
-      toast("Proposta aggiunta.");
+      toast(l().added);
     });
 
     document.getElementById("shareBtn").addEventListener("click", async () => {
       const url = shareUrl();
       if (navigator.share) {
         try {
-          await navigator.share({ title: "Aperitivo Vivarini 5 - 2 luglio", url });
+          await navigator.share({ title: document.title, url });
           return;
         } catch (error) {}
       }
-      copyText(url, "Link con stato copiato.");
+      copyText(url, l().copiedLink);
     });
 
     document.getElementById("copyBtn").addEventListener("click", () => {
       const lines = [
-        "Aperitivo Vivarini 5 - 2 luglio",
+        document.title,
         "",
-        ...state.items.filter(item => item.takenBy.trim()).map(item => `✓ ${item.name} - ${item.takenBy}`),
+        ...state.items.filter(item => item.takenBy.trim()).map(item => `✓ ${itemName(item)} - ${item.takenBy}`),
         "",
-        "Ancora liberi:",
-        ...state.items.filter(item => !item.takenBy.trim()).slice(0, 12).map(item => `• ${item.name}`)
+        l().stillFree,
+        ...state.items.filter(item => !item.takenBy.trim()).slice(0, 12).map(item => `• ${itemName(item)}`)
       ];
-      copyText(lines.join("\n"), "Riepilogo copiato.");
+      copyText(lines.join("\n"), l().copiedSummary);
     });
 
     document.getElementById("resetBtn").addEventListener("click", () => {
-      if (confirm("Vuoi ripartire dalla lista iniziale su questo dispositivo?")) {
+      if (confirm(l().cleanConfirm)) {
         state.items = initialItems;
         localStorage.removeItem(STORAGE_KEY);
         render();
