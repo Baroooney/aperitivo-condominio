@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Aperitivo Condominio - 2 luglio</title>
+  <title>Aperitivo Vivarini 5 - 2 luglio</title>
   <style>
     :root {
       --ink: #232323;
@@ -396,8 +396,8 @@
     <section class="top">
       <div class="title-row">
         <div>
-          <h1>Aperitivo Condominio</h1>
-          <p class="sub">19 famiglie, circa 38 persone. Scegli cosa porti, così il tavolo resta equilibrato tra bicchieri pieni e cose buone da mordere.</p>
+          <h1>Aperitivo Vivarini 5</h1>
+          <p class="sub">Il condominio si organizza per il 2 luglio: 19 famiglie, circa 38 persone. Scegli cosa porti, così il tavolo resta equilibrato tra bicchieri pieni e cose buone da mordere.</p>
         </div>
         <div class="date-badge"><span>2</span><small>luglio</small></div>
       </div>
@@ -734,7 +734,7 @@
       const url = shareUrl();
       if (navigator.share) {
         try {
-          await navigator.share({ title: "Aperitivo Condominio - 2 luglio", url });
+          await navigator.share({ title: "Aperitivo Vivarini 5 - 2 luglio", url });
           return;
         } catch (error) {}
       }
@@ -743,7 +743,7 @@
 
     document.getElementById("copyBtn").addEventListener("click", () => {
       const lines = [
-        "Aperitivo Condominio - 2 luglio",
+        "Aperitivo Vivarini 5 - 2 luglio",
         "",
         ...state.items.filter(item => item.takenBy.trim()).map(item => `✓ ${item.name} - ${item.takenBy}`),
         "",
