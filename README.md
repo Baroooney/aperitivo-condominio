@@ -1,6 +1,6 @@
-# Aperitivo Condominio
+# Aperitivo Vivarini 5
 
-Web app mobile-first per organizzare l'aperitivo di condominio del 2 luglio.
+Web app mobile-first per organizzare l'aperitivo del condominio Vivarini 5 del 2 luglio.
 
 ## Funzioni
 
