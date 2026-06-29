@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aperitivo Condominio - 2 luglio</title>
+  <style>
+    :root {
+      --ink: #232323;
+      --muted: #6f6a61;
+      --paper: #fffaf1;
+      --panel: #fffdf8;
+      --sage: #7ba889;
+      --sage-dark: #406f50;
+      --lemon: #f4cf58;
+      --coral: #e97158;
+      --blue: #78a9bf;
+      --line: #e7dece;
+      --shadow: 0 14px 34px rgba(56, 47, 35, .12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(140deg, rgba(123,168,137,.24), transparent 36%),
+        linear-gradient(225deg, rgba(244,207,88,.28), transparent 34%),
+        var(--paper);
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .app {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      padding: 18px clamp(14px, 3vw, 28px) 42px;
+    }
+
+    .top {
+      display: grid;
+      gap: 16px;
+      padding: 14px 0 10px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 8vw, 58px);
+      line-height: .95;
+      letter-spacing: 0;
+      max-width: 780px;
+    }
+
+    .date-badge {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 72px;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      color: #2f382c;
+      background: var(--lemon);
+      border: 1px solid rgba(35,35,35,.1);
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      text-align: center;
+      line-height: 1;
+    }
+
+    .date-badge span { display: block; font-size: 28px; }
+    .date-badge small { display: block; font-size: 12px; margin-top: 4px; }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 760px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat, .panel {
+      background: rgba(255,253,248,.9);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(56,47,35,.08);
+    }
+
+    .stat {
+      padding: 12px;
+      min-height: 88px;
+    }
+
+    .stat small {
+      display: block;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: clamp(22px, 6vw, 34px);
+      line-height: 1;
+    }
+
+    .stat em {
+      display: block;
+      color: var(--muted);
+      font-style: normal;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel { padding: 14px; }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .balance {
+      display: grid;
+      gap: 10px;
+    }
+
+    .bar {
+      height: 16px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #efe4d1;
+      display: flex;
+      border: 1px solid var(--line);
+    }
+
+    .bar span { min-width: 0; transition: width .25s ease; }
+    .bar .drink { background: var(--blue); }
+    .bar .food { background: var(--coral); }
+    .bar .extra { background: var(--sage); }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-right: 5px;
+      vertical-align: -1px;
+    }
+
+    .tips {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tips li {
+      padding: 10px;
+      border-radius: 8px;
+      background: #f7edd8;
+      border: 1px solid #ead9b9;
+      color: #493f2d;
+      font-size: 14px;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: grid;
+      gap: 10px;
+      padding: 10px 0;
+      backdrop-filter: blur(16px);
+      background: rgba(255,250,241,.84);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow: auto;
+      padding-bottom: 2px;
+    }
+
+    .tab, .ghost, .primary, .danger, .mini {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-height: 42px;
+      padding: 0 12px;
+      background: var(--panel);
+      color: var(--ink);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      border-color: var(--sage-dark);
+      background: var(--sage);
+      color: #fff;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-weight: 800;
+    }
+
+    .switch input { width: 18px; height: 18px; accent-color: var(--sage-dark); }
+
+    .grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .item {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-left: 7px solid var(--sage);
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(56,47,35,.08);
+    }
+
+    .item[data-category="bere"] { border-left-color: var(--blue); }
+    .item[data-category="salato"] { border-left-color: var(--coral); }
+    .item[data-category="dolce"] { border-left-color: var(--lemon); }
+    .item[data-category="extra"] { border-left-color: var(--sage); }
+    .item.taken { opacity: .78; }
+
+    .item-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .item h3 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .item p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .price {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 54px;
+      height: 34px;
+      border-radius: 8px;
+      background: #f2eadc;
+      color: #453b2e;
+      font-weight: 900;
+    }
+
+    .claim {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+
+    input, select {
+      min-height: 42px;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 0 11px;
+    }
+
+    .primary {
+      color: #fff;
+      background: var(--sage-dark);
+      border-color: var(--sage-dark);
+    }
+
+    .danger {
+      color: #6f2d20;
+      background: #ffe3dc;
+      border-color: #f3b8a9;
+    }
+
+    .taken-by {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 10px;
+      border-radius: 8px;
+      background: #eef5ea;
+      color: #31553d;
+      font-weight: 800;
+    }
+
+    .form {
+      display: grid;
+      gap: 8px;
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 120px;
+      gap: 8px;
+    }
+
+    .footer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      width: min(520px, calc(100% - 28px));
+      padding: 12px 14px;
+      background: #232323;
+      color: #fff;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    @media (min-width: 760px) {
+      .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .layout { grid-template-columns: 340px minmax(0, 1fr); }
+      .side { position: sticky; top: 14px; }
+      .toolbar { top: 0; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="top">
+      <div class="title-row">
+        <div>
+          <h1>Aperitivo Condominio</h1>
+          <p class="sub">19 famiglie, circa 38 persone. Scegli cosa porti, così il tavolo resta equilibrato tra bicchieri pieni e cose buone da mordere.</p>
+        </div>
+        <div class="date-badge"><span>2</span><small>luglio</small></div>
+      </div>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="layout">
+      <aside class="side">
+        <div class="panel balance">
+          <h2>Bilanciamento</h2>
+          <div class="bar" aria-label="Equilibrio tra bere, mangiare ed extra">
+            <span class="drink" id="barDrink"></span>
+            <span class="food" id="barFood"></span>
+            <span class="extra" id="barExtra"></span>
+          </div>
+          <div class="legend" id="legend"></div>
+        </div>
+
+        <div class="panel" style="margin-top:10px">
+          <h2>Suggerimenti</h2>
+          <ul class="tips" id="tips"></ul>
+        </div>
+
+        <div class="panel" style="margin-top:10px">
+          <h2>Aggiungi proposta</h2>
+          <form class="form" id="addForm">
+            <input name="name" placeholder="Nome cosa da portare" required>
+            <input name="description" placeholder="Quantità o dettaglio" required>
+            <select name="category" required>
+              <option value="bere">Bere</option>
+              <option value="salato">Salato</option>
+              <option value="dolce">Dolce/frutta</option>
+              <option value="extra">Extra utili</option>
+            </select>
+            <button class="primary" type="submit">＋ Aggiungi</button>
+          </form>
+          <div class="footer-actions">
+            <button class="ghost" id="shareBtn" type="button">↗ Condividi stato</button>
+            <button class="ghost" id="copyBtn" type="button">⧉ Copia riepilogo</button>
+          </div>
+        </div>
+      </aside>
+
+      <section>
+        <div class="toolbar">
+          <div class="tabs" id="tabs"></div>
+          <div class="actions">
+            <label class="switch"><input type="checkbox" id="freeOnly"> Solo libere</label>
+            <button class="ghost" id="resetBtn" type="button">↺ Riparti pulito</button>
+          </div>
+        </div>
+        <div class="grid" id="items"></div>
+      </section>
+    </section>
+  </main>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "aperitivo-condominio-v2";
+    const categories = {
+      tutti: "Tutto",
+      bere: "Bere",
+      salato: "Salato",
+      dolce: "Dolce/frutta",
+      extra: "Extra"
+    };
+
+    const initialItems = [
+      ["Birra chiara", "12 lattine/bottiglie", 15, "bere"],
+      ["Birra IPA o artigianale", "6 bottiglie", 14, "bere"],
+      ["Vino bianco fresco", "2 bottiglie", 16, "bere"],
+      ["Spritz già pronto e fresco", "In caraffe, pronto da versare", 35, "bere"],
+      ["Acqua naturale/frizzante", "24 piccole o 12 grandi", 15, "bere"],
+      ["Bibite analcoliche", "Cola, aranciata, tonica", 18, "bere"],
+      ["Succhi/analcolico", "Per chi non beve", 12, "bere"],
+      ["Ghiaccio", "4-5 sacchi", 12, "bere"],
+      ["Focacce/pizze tagliate", "4 teglie", 35, "salato"],
+      ["Patatine e snack", "Mix grande", 18, "salato"],
+      ["Taralli/grissini/crackers", "Assortimento", 14, "salato"],
+      ["Tagliere salumi", "Porzione per gruppo", 30, "salato"],
+      ["Tagliere formaggi", "Porzione per gruppo", 25, "salato"],
+      ["Verdure crude + hummus/salse", "Una bella base fresca", 20, "salato"],
+      ["Olive/sottoli/stuzzichini", "Ciotole miste", 18, "salato"],
+      ["Tramezzini o panini piccoli", "Da prendere al volo", 25, "salato"],
+      ["Frutta fresca già tagliata", "Vassoi pronti", 20, "dolce"],
+      ["Biscotti/dolcetti secchi", "Qualcosa da fine serata", 15, "dolce"],
+      ["Bicchieri, piatti e posate", "Compostabili", 18, "extra"],
+      ["Tovaglioli e carta cucina", "Pacchi grandi", 8, "extra"],
+      ["Sacchi spazzatura", "Indifferenziata + plastica", 6, "extra"],
+      ["Speaker/cassa bluetooth", "Carica, con playlist", 0, "extra", "Francesco"],
+      ["Apribottiglie e cavatappi", "Da non dimenticare", 0, "extra", "Francesco"]
+    ].map((row, index) => ({
+      id: "item-" + index,
+      name: row[0],
+      description: row[1],
+      budget: row[2],
+      category: row[3],
+      takenBy: row[4] || ""
+    }));
+
+    let state = {
+      activeCategory: "tutti",
+      freeOnly: false,
+      items: loadItems()
+    };
+
+    function loadItems() {
+      const fromUrl = new URLSearchParams(location.search).get("stato");
+      if (fromUrl) {
+        try {
+          const decoded = JSON.parse(decodeURIComponent(atob(fromUrl)));
+          if (Array.isArray(decoded)) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(decoded));
+            history.replaceState(null, "", location.pathname);
+            return decoded;
+          }
+        } catch (error) {}
+      }
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        return Array.isArray(saved) ? saved : initialItems;
+      } catch (error) {
+        return initialItems;
+      }
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+      render();
+    }
+
+    function takenItems() {
+      return state.items.filter(item => item.takenBy.trim());
+    }
+
+    function byGroup(items) {
+      return items.reduce((acc, item) => {
+        const group = item.category === "bere" ? "drink" : item.category === "extra" ? "extra" : "food";
+        acc[group] += item.budget;
+        return acc;
+      }, { drink: 0, food: 0, extra: 0 });
+    }
+
+    function defaultBudgetFor(category) {
+      if (category === "bere") return 16;
+      if (category === "extra") return 6;
+      return 18;
+    }
+
+    function renderStats() {
+      const taken = takenItems();
+      const families = new Set(taken.map(item => item.takenBy.trim().toLowerCase())).size;
+      const free = state.items.length - taken.length;
+      const stats = [
+        ["Famiglie", "19", "circa 38 persone"],
+        ["Assegnati", String(taken.length), state.items.length + " voci totali"],
+        ["Ancora liberi", String(free), "da scegliere"],
+        ["Famiglie attive", String(families), "hanno già preso qualcosa"]
+      ];
+      document.getElementById("stats").innerHTML = stats.map(stat => `
+        <div class="stat">
+          <small>${stat[0]}</small>
+          <strong>${stat[1]}</strong>
+          <em>${stat[2]}</em>
+        </div>
+      `).join("");
+    }
+
+    function renderBalance() {
+      const groups = byGroup(takenItems());
+      const total = Math.max(groups.drink + groups.food + groups.extra, 1);
+      document.getElementById("barDrink").style.width = (groups.drink / total * 100) + "%";
+      document.getElementById("barFood").style.width = (groups.food / total * 100) + "%";
+      document.getElementById("barExtra").style.width = (groups.extra / total * 100) + "%";
+      document.getElementById("legend").innerHTML = `
+        <span><i class="dot" style="background:var(--blue)"></i>Bere ${Math.round(groups.drink / total * 100)}%</span>
+        <span><i class="dot" style="background:var(--coral)"></i>Mangiare ${Math.round(groups.food / total * 100)}%</span>
+        <span><i class="dot" style="background:var(--sage)"></i>Extra ${Math.round(groups.extra / total * 100)}%</span>
+      `;
+    }
+
+    function hasTaken(match) {
+      return takenItems().some(item => match(item.name.toLowerCase(), item.description.toLowerCase(), item.category));
+    }
+
+    function renderTips() {
+      const groups = byGroup(takenItems());
+      const total = Math.max(groups.drink + groups.food + groups.extra, 1);
+      const drinkRatio = groups.drink / total;
+      const foodRatio = groups.food / total;
+      const tips = [];
+
+      if (!hasTaken((name) => name.includes("acqua"))) tips.push("Manca l'acqua: prima delle birre eroiche, mettiamola in sicurezza.");
+      if (!hasTaken((name, desc) => name.includes("analcolico") || desc.includes("analcolico") || name.includes("bibite"))) tips.push("Serve una quota analcolica: bibite o succhi fanno felici anche chi guida.");
+      if (!hasTaken((name) => name.includes("ghiaccio"))) tips.push("Il ghiaccio è fondamentale: senza, il 2 luglio diventa tiepido in fretta.");
+      if (!hasTaken((name) => name.includes("focacce") || name.includes("snack") || name.includes("taralli"))) tips.push("Manca una base salata facile: focaccia, patatine o taralli tengono insieme la serata.");
+      if (!hasTaken((name) => name.includes("bicchieri") || name.includes("piatti"))) tips.push("Extra da coprire: bicchieri, piatti e posate evitano il caos sul finale.");
+      if (!hasTaken((name) => name.includes("sacchi"))) tips.push("Aggiungiamo sacchi spazzatura: gesto poco poetico, utilissimo.");
+      if (drinkRatio > .58 && groups.drink > 60) tips.push("Bere molto coperto: ora conviene spingere su salato, formaggi, focacce e verdure.");
+      if (foodRatio > .62 && groups.food > 70) tips.push("Cibo bello presente: mancano forse bevande fredde e qualcosa di fresco.");
+      if (tips.length === 0) tips.push("Equilibrio buono: continuate così, sta venendo un aperitivo serio.");
+
+      document.getElementById("tips").innerHTML = tips.slice(0, 5).map(tip => `<li>${tip}</li>`).join("");
+    }
+
+    function renderTabs() {
+      document.getElementById("tabs").innerHTML = Object.entries(categories).map(([key, label]) => `
+        <button class="tab ${state.activeCategory === key ? "active" : ""}" data-tab="${key}" type="button">${label}</button>
+      `).join("");
+    }
+
+    function visibleItems() {
+      return state.items.filter(item => {
+        const categoryOk = state.activeCategory === "tutti" || item.category === state.activeCategory;
+        const freeOk = !state.freeOnly || !item.takenBy.trim();
+        return categoryOk && freeOk;
+      });
+    }
+
+    function renderItems() {
+      const items = visibleItems();
+      document.getElementById("items").innerHTML = items.map(item => {
+        const taken = item.takenBy.trim();
+        return `
+          <article class="item ${taken ? "taken" : ""}" data-category="${item.category}">
+            <div class="item-head">
+              <div>
+                <h3>${item.name}</h3>
+                <p>${categories[item.category]} · ${item.description}</p>
+              </div>
+            </div>
+            ${taken ? `
+              <div class="taken-by">
+                <span>✓ Porta: ${taken}</span>
+                <button class="danger mini" data-free="${item.id}" type="button">Libera</button>
+              </div>
+            ` : `
+              <div class="claim">
+                <input data-name="${item.id}" placeholder="Il tuo nome / famiglia">
+                <button class="primary" data-claim="${item.id}" type="button">Lo porto io</button>
+              </div>
+            `}
+          </article>
+        `;
+      }).join("") || `<div class="panel"><h2>Niente qui</h2><p class="sub">Cambia filtro o aggiungi una proposta.</p></div>`;
+    }
+
+    function render() {
+      renderStats();
+      renderBalance();
+      renderTips();
+      renderTabs();
+      renderItems();
+      document.getElementById("freeOnly").checked = state.freeOnly;
+    }
+
+    function toast(message) {
+      const node = document.getElementById("toast");
+      node.textContent = message;
+      node.classList.add("show");
+      setTimeout(() => node.classList.remove("show"), 2200);
+    }
+
+    function claim(id) {
+      const input = document.querySelector(`[data-name="${id}"]`);
+      const name = input ? input.value.trim() : "";
+      if (!name) {
+        toast("Scrivi prima il nome o la famiglia.");
+        return;
+      }
+      state.items = state.items.map(item => item.id === id ? { ...item, takenBy: name } : item);
+      save();
+      toast("Perfetto, segnato.");
+    }
+
+    function free(id) {
+      state.items = state.items.map(item => item.id === id ? { ...item, takenBy: "" } : item);
+      save();
+      toast("Voce liberata.");
+    }
+
+    function shareUrl() {
+      const packed = btoa(encodeURIComponent(JSON.stringify(state.items)));
+      const base = location.origin === "null"
+        ? location.href.split("?")[0]
+        : `${location.origin}${location.pathname}`;
+      return `${base}?stato=${packed}`;
+    }
+
+    async function copyText(text, message) {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast(message);
+      } catch (error) {
+        prompt("Copia questo testo", text);
+      }
+    }
+
+    document.addEventListener("click", event => {
+      const tab = event.target.closest("[data-tab]");
+      const claimBtn = event.target.closest("[data-claim]");
+      const freeBtn = event.target.closest("[data-free]");
+      if (tab) {
+        state.activeCategory = tab.dataset.tab;
+        render();
+      }
+      if (claimBtn) claim(claimBtn.dataset.claim);
+      if (freeBtn) free(freeBtn.dataset.free);
+    });
+
+    document.getElementById("freeOnly").addEventListener("change", event => {
+      state.freeOnly = event.target.checked;
+      render();
+    });
+
+    document.getElementById("addForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      state.items = [{
+        id: "custom-" + Date.now(),
+        name: String(data.get("name")).trim(),
+        description: String(data.get("description")).trim(),
+        budget: defaultBudgetFor(String(data.get("category"))),
+        category: String(data.get("category")),
+        takenBy: ""
+      }, ...state.items];
+      event.currentTarget.reset();
+      save();
+      toast("Proposta aggiunta.");
+    });
+
+    document.getElementById("shareBtn").addEventListener("click", async () => {
+      const url = shareUrl();
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "Aperitivo Condominio - 2 luglio", url });
+          return;
+        } catch (error) {}
+      }
+      copyText(url, "Link con stato copiato.");
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", () => {
+      const lines = [
+        "Aperitivo Condominio - 2 luglio",
+        "",
+        ...state.items.filter(item => item.takenBy.trim()).map(item => `✓ ${item.name} - ${item.takenBy}`),
+        "",
+        "Ancora liberi:",
+        ...state.items.filter(item => !item.takenBy.trim()).slice(0, 12).map(item => `• ${item.name}`)
+      ];
+      copyText(lines.join("\n"), "Riepilogo copiato.");
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      if (confirm("Vuoi ripartire dalla lista iniziale su questo dispositivo?")) {
+        state.items = initialItems;
+        localStorage.removeItem(STORAGE_KEY);
+        render();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
