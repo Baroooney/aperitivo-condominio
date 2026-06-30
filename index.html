@@ -56,31 +56,6 @@
       gap: 12px;
     }
 
-    .lang-toggle {
-      display: inline-flex;
-      gap: 6px;
-      width: fit-content;
-      padding: 4px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255,253,248,.86);
-    }
-
-    .lang-toggle button {
-      min-height: 34px;
-      border: 0;
-      border-radius: 6px;
-      padding: 0 10px;
-      background: transparent;
-      color: var(--muted);
-      font-weight: 900;
-    }
-
-    .lang-toggle button.active {
-      background: var(--sage-dark);
-      color: #fff;
-    }
-
     h1 {
       margin: 0;
       font-size: clamp(30px, 8vw, 58px);
@@ -307,6 +282,28 @@
       gap: 10px;
     }
 
+    .reset-zone {
+      display: grid;
+      gap: 8px;
+      justify-items: start;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .reset-zone p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 560px;
+    }
+
+    .reset-final {
+      background: #ffe3dc;
+      border-color: #f3b8a9;
+      color: #6f2d20;
+    }
+
     .item {
       display: grid;
       gap: 10px;
@@ -451,10 +448,6 @@
     <section class="top">
       <div class="title-row">
         <div class="headline">
-          <div class="lang-toggle" aria-label="Language">
-            <button class="active" data-lang="it" type="button">IT</button>
-            <button data-lang="en" type="button">EN</button>
-          </div>
           <h1 id="appTitle">Aperitivo Vivarini 5</h1>
           <p class="sub" id="appSubtitle"></p>
         </div>
@@ -504,11 +497,14 @@
           <div class="tabs" id="tabs"></div>
           <div class="actions">
             <label class="switch"><input type="checkbox" id="freeOnly"> <span id="freeOnlyLabel">Solo libere</span></label>
-            <button class="ghost" id="resetBtn" type="button">↺ Riparti pulito</button>
             <span class="sync-status" id="syncStatus" data-state="loading" aria-live="polite">Salvataggio condiviso...</span>
           </div>
         </div>
         <div class="grid" id="items"></div>
+        <div class="reset-zone">
+          <button class="danger reset-final" id="resetBtn" type="button">↺ Riparti pulito</button>
+          <p id="resetHint">Usalo solo se bisogna cancellare tutte le scelte e ripartire da zero per tutti.</p>
+        </div>
       </section>
     </section>
   </main>
@@ -551,6 +547,9 @@
         copiedSummary: "Riepilogo copiato.",
         cleanConfirm: "Vuoi ripartire dalla lista iniziale su questo dispositivo?",
         sharedResetConfirm: "Vuoi ripartire dalla lista iniziale per tutti?",
+        resetHint: "Usalo solo se bisogna cancellare tutte le scelte e ripartire da zero per tutti.",
+        resetConfirmOne: "Sei sicuro che vuoi cancellare tutti i dati della lista?",
+        resetConfirmTwo: "Ultima conferma: questa azione cancella le scelte per tutti. Procedo?",
         emptyTitle: "Niente qui",
         emptyText: "Cambia filtro o aggiungi una proposta.",
         stillFree: "Ancora liberi:",
@@ -727,26 +726,27 @@
     }));
 
     let state = {
-      lang: localStorage.getItem("aperitivo-lang") || "it",
+      lang: "it",
       activeCategory: "tutti",
       freeOnly: false,
       items: loadItems()
     };
+    localStorage.setItem("aperitivo-lang", "it");
     let remoteUpdatedAt = 0;
     let syncState = "loading";
     let isSavingRemote = false;
     let syncTimer = null;
 
     function l() {
-      return labels[state.lang] || labels.it;
+      return labels.it;
     }
 
     function itemName(item) {
-      return state.lang === "en" ? (item.nameEn || item.name) : item.name;
+      return item.name;
     }
 
     function itemDescription(item) {
-      return state.lang === "en" ? (item.descriptionEn || item.description) : item.description;
+      return item.description;
     }
 
     function categoryLabel(category) {
@@ -952,7 +952,7 @@
       document.getElementById("barFood").style.width = (groups.food / total * 100) + "%";
       document.getElementById("legend").innerHTML = `
         <span><i class="dot" style="background:var(--blue)"></i>${categoryLabel("bere")} ${Math.round(groups.drink / total * 100)}%</span>
-        <span><i class="dot" style="background:var(--coral)"></i>${state.lang === "en" ? "Food" : "Mangiare"} ${Math.round(groups.food / total * 100)}%</span>
+        <span><i class="dot" style="background:var(--coral)"></i>Mangiare ${Math.round(groups.food / total * 100)}%</span>
       `;
     }
 
@@ -1018,7 +1018,7 @@
               </div>
             ` : `
               <div class="claim">
-                <input data-name="${item.id}" placeholder="${state.lang === "en" ? "Your name / family" : "Il tuo nome / famiglia"}">
+                <input data-name="${item.id}" placeholder="Il tuo nome / famiglia">
                 <button class="primary" data-claim="${item.id}" type="button">${l().bring}</button>
               </div>
             `}
@@ -1028,8 +1028,8 @@
     }
 
     function renderStaticText() {
-      document.documentElement.lang = state.lang;
-      document.title = state.lang === "en" ? "Vivarini 5 Aperitivo - July 2" : "Aperitivo Vivarini 5 - 2 luglio";
+      document.documentElement.lang = "it";
+      document.title = "Aperitivo Vivarini 5 - 2 luglio";
       document.getElementById("appTitle").textContent = l().title;
       document.getElementById("appSubtitle").textContent = l().subtitle;
       document.getElementById("dateMonth").textContent = l().month;
@@ -1047,9 +1047,7 @@
       document.getElementById("copyBtn").textContent = l().copy;
       document.getElementById("freeOnlyLabel").textContent = l().freeOnly;
       document.getElementById("resetBtn").textContent = l().reset;
-      document.querySelectorAll("[data-lang]").forEach(button => {
-        button.classList.toggle("active", button.dataset.lang === state.lang);
-      });
+      document.getElementById("resetHint").textContent = l().resetHint;
     }
 
     function render() {
@@ -1101,7 +1099,7 @@
         await navigator.clipboard.writeText(text);
         toast(message);
       } catch (error) {
-        prompt(state.lang === "en" ? "Copy this text" : "Copia questo testo", text);
+        prompt("Copia questo testo", text);
       }
     }
 
@@ -1109,14 +1107,8 @@
       const tab = event.target.closest("[data-tab]");
       const claimBtn = event.target.closest("[data-claim]");
       const freeBtn = event.target.closest("[data-free]");
-      const langBtn = event.target.closest("[data-lang]");
       if (tab) {
         state.activeCategory = tab.dataset.tab;
-        render();
-      }
-      if (langBtn) {
-        state.lang = langBtn.dataset.lang;
-        localStorage.setItem("aperitivo-lang", state.lang);
         render();
       }
       if (claimBtn) claim(claimBtn.dataset.claim);
@@ -1170,7 +1162,7 @@
     });
 
     document.getElementById("resetBtn").addEventListener("click", () => {
-      if (confirm(l().sharedResetConfirm)) {
+      if (confirm(l().resetConfirmOne) && confirm(l().resetConfirmTwo)) {
         state.items = cloneItems(initialItems);
         localStorage.removeItem(STORAGE_KEY);
         save();
