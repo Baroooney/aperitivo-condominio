@@ -186,7 +186,6 @@
     .bar span { min-width: 0; transition: width .25s ease; }
     .bar .drink { background: var(--blue); }
     .bar .food { background: var(--coral); }
-    .bar .extra { background: var(--sage); }
     .legend {
       display: flex;
       flex-wrap: wrap;
@@ -262,6 +261,32 @@
       flex-wrap: wrap;
       align-items: center;
     }
+
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,253,248,.9);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .sync-status::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--sage);
+    }
+
+    .sync-status[data-state="saving"]::before,
+    .sync-status[data-state="loading"]::before { background: var(--lemon); }
+    .sync-status[data-state="error"]::before { background: var(--coral); }
 
     .switch {
       display: inline-flex;
@@ -442,10 +467,9 @@
       <aside class="side">
         <div class="panel balance">
           <h2 id="balanceTitle">Bilanciamento</h2>
-          <div class="bar" aria-label="Equilibrio tra bere, mangiare ed extra">
+          <div class="bar" aria-label="Equilibrio tra bere e mangiare">
             <span class="drink" id="barDrink"></span>
             <span class="food" id="barFood"></span>
-            <span class="extra" id="barExtra"></span>
           </div>
           <div class="legend" id="legend"></div>
         </div>
@@ -481,6 +505,7 @@
           <div class="actions">
             <label class="switch"><input type="checkbox" id="freeOnly"> <span id="freeOnlyLabel">Solo libere</span></label>
             <button class="ghost" id="resetBtn" type="button">↺ Riparti pulito</button>
+            <span class="sync-status" id="syncStatus" data-state="loading" aria-live="polite">Salvataggio condiviso...</span>
           </div>
         </div>
         <div class="grid" id="items"></div>
@@ -490,7 +515,16 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const STORAGE_KEY = "aperitivo-condominio-v4";
+    const STORAGE_KEY = "aperitivo-condominio-v5";
+    const LEGACY_STORAGE_KEY = "aperitivo-condominio-v4";
+    const SYNC_INTERVAL_MS = 9000;
+    const REMOTE_STORE = {
+      title: "Vivarini 5 Aperitivo Data",
+      path: "Vivarini-5-Aperitivo-Data-06-30",
+      accessToken: "e0ec0e0d8b924321e18c6f6616a2750208e1b1cb4ad08ddd76d37ba17fad",
+      getUrl: "https://api.telegra.ph/getPage/Vivarini-5-Aperitivo-Data-06-30?return_content=true",
+      editUrl: "https://api.telegra.ph/editPage"
+    };
     const labels = {
       it: {
         title: "Aperitivo Vivarini 5",
@@ -516,9 +550,17 @@
         copiedLink: "Link con stato copiato.",
         copiedSummary: "Riepilogo copiato.",
         cleanConfirm: "Vuoi ripartire dalla lista iniziale su questo dispositivo?",
+        sharedResetConfirm: "Vuoi ripartire dalla lista iniziale per tutti?",
         emptyTitle: "Niente qui",
         emptyText: "Cambia filtro o aggiungi una proposta.",
         stillFree: "Ancora liberi:",
+        sync: {
+          loading: "Carico salvataggio condiviso",
+          saving: "Salvo per tutti...",
+          online: "Salvataggio condiviso attivo",
+          updated: "Aggiornato per tutti",
+          error: "Salvataggio condiviso non disponibile"
+        },
         categories: { tutti: "Tutto", bere: "Bere", salato: "Salato", dolce: "Dolce/frutta", extra: "Extra" },
         stats: {
           families: ["Conferme", "19", "2+ persone per conferma"],
@@ -566,9 +608,17 @@
         copiedLink: "Status link copied.",
         copiedSummary: "Summary copied.",
         cleanConfirm: "Reset this device to the starting list?",
+        sharedResetConfirm: "Reset the starting list for everyone?",
         emptyTitle: "Nothing here",
         emptyText: "Change filter or add a proposal.",
         stillFree: "Still free:",
+        sync: {
+          loading: "Loading shared saving",
+          saving: "Saving for everyone...",
+          online: "Shared saving active",
+          updated: "Updated for everyone",
+          error: "Shared saving unavailable"
+        },
         categories: { tutti: "All", bere: "Drinks", salato: "Savory", dolce: "Dessert/fruit", extra: "Useful extras" },
         stats: {
           families: ["Confirmations", "19", "2+ people per confirmation"],
@@ -682,6 +732,10 @@
       freeOnly: false,
       items: loadItems()
     };
+    let remoteUpdatedAt = 0;
+    let syncState = "loading";
+    let isSavingRemote = false;
+    let syncTimer = null;
 
     function l() {
       return labels[state.lang] || labels.it;
@@ -699,30 +753,68 @@
       return l().categories[category] || category;
     }
 
+    function cloneItems(items) {
+      return JSON.parse(JSON.stringify(items));
+    }
+
+    function itemTemplateMap() {
+      return new Map(initialItems.map(item => [item.id, item]));
+    }
+
+    function normalizeItems(items) {
+      if (!Array.isArray(items)) return cloneItems(initialItems);
+      const templates = itemTemplateMap();
+      return items.map(item => {
+        const template = templates.get(item.id) || {};
+        return {
+          ...template,
+          ...item,
+          id: String(item.id || "custom-" + Date.now()),
+          name: String(item.name || template.name || ""),
+          nameEn: String(item.nameEn || item.name || template.nameEn || template.name || ""),
+          description: String(item.description || template.description || ""),
+          descriptionEn: String(item.descriptionEn || item.description || template.descriptionEn || template.description || ""),
+          budget: Number.isFinite(Number(item.budget)) ? Number(item.budget) : Number(template.budget || 0),
+          category: item.category || template.category || "salato",
+          takenBy: String(item.takenBy || "")
+        };
+      });
+    }
+
+    function localItemsChangedFromInitial(items) {
+      return JSON.stringify(normalizeItems(items)) !== JSON.stringify(initialItems);
+    }
+
+    function saveLocal() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+    }
+
     function loadItems() {
       const fromUrl = new URLSearchParams(location.search).get("stato");
       if (fromUrl) {
         try {
           const decoded = JSON.parse(decodeURIComponent(atob(fromUrl)));
           if (Array.isArray(decoded)) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(decoded));
+            const normalized = normalizeItems(decoded);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
             history.replaceState(null, "", location.pathname);
-            return decoded;
+            return normalized;
           }
         } catch (error) {}
       }
 
       try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        return Array.isArray(saved) ? saved : initialItems;
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY));
+        return Array.isArray(saved) ? normalizeItems(saved) : cloneItems(initialItems);
       } catch (error) {
-        return initialItems;
+        return cloneItems(initialItems);
       }
     }
 
-    function save() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+    async function save() {
+      saveLocal();
       render();
+      await saveRemote();
     }
 
     function takenItems() {
@@ -731,16 +823,107 @@
 
     function byGroup(items) {
       return items.reduce((acc, item) => {
-        const group = item.category === "bere" ? "drink" : item.category === "extra" ? "extra" : "food";
-        acc[group] += item.budget;
+        if (item.category === "extra") return acc;
+        const group = item.category === "bere" ? "drink" : "food";
+        acc[group] += Number(item.budget) || 0;
         return acc;
-      }, { drink: 0, food: 0, extra: 0 });
+      }, { drink: 0, food: 0 });
     }
 
     function defaultBudgetFor(category) {
       if (category === "bere") return 16;
       if (category === "extra") return 6;
       return 18;
+    }
+
+    function setSyncState(nextState) {
+      syncState = nextState;
+      const node = document.getElementById("syncStatus");
+      if (!node) return;
+      node.dataset.state = nextState;
+      node.textContent = l().sync[nextState] || l().sync.online;
+    }
+
+    function remotePayload() {
+      return {
+        version: 5,
+        updatedAt: Date.now(),
+        items: normalizeItems(state.items)
+      };
+    }
+
+    function remoteContent(payload) {
+      return JSON.stringify([{ tag: "pre", children: [JSON.stringify(payload)] }]);
+    }
+
+    function extractRemotePayload(page) {
+      const node = page && page.result && Array.isArray(page.result.content) ? page.result.content[0] : null;
+      const raw = node && Array.isArray(node.children) ? node.children.join("") : "";
+      return raw ? JSON.parse(raw) : null;
+    }
+
+    async function fetchRemotePayload() {
+      const response = await fetch(REMOTE_STORE.getUrl + "&_=" + Date.now(), { cache: "no-store" });
+      if (!response.ok) throw new Error("Remote load failed");
+      const page = await response.json();
+      if (!page.ok) throw new Error("Remote page unavailable");
+      return extractRemotePayload(page);
+    }
+
+    async function saveRemote() {
+      if (isSavingRemote) return;
+      isSavingRemote = true;
+      setSyncState("saving");
+      try {
+        const payload = remotePayload();
+        const data = new URLSearchParams();
+        data.set("access_token", REMOTE_STORE.accessToken);
+        data.set("path", REMOTE_STORE.path);
+        data.set("title", REMOTE_STORE.title);
+        data.set("content", remoteContent(payload));
+        data.set("return_content", "true");
+        const response = await fetch(REMOTE_STORE.editUrl, { method: "POST", body: data });
+        if (!response.ok) throw new Error("Remote save failed");
+        const result = await response.json();
+        if (!result.ok) throw new Error("Remote save rejected");
+        remoteUpdatedAt = payload.updatedAt;
+        setSyncState("updated");
+      } catch (error) {
+        setSyncState("error");
+      } finally {
+        isSavingRemote = false;
+      }
+    }
+
+    async function loadRemote() {
+      if (isSavingRemote) return;
+      try {
+        setSyncState(remoteUpdatedAt ? "online" : "loading");
+        const payload = await fetchRemotePayload();
+        const remoteItems = normalizeItems(payload && payload.items);
+        const remoteLooksReady = remoteItems.length >= initialItems.length - 2;
+        const remoteIsNewer = payload && Number(payload.updatedAt || 0) > remoteUpdatedAt;
+        if (!payload || !remoteLooksReady) {
+          await saveRemote();
+          return;
+        }
+        if (remoteIsNewer) {
+          state.items = remoteItems;
+          remoteUpdatedAt = Number(payload.updatedAt || Date.now());
+          saveLocal();
+          render();
+        }
+        setSyncState("online");
+      } catch (error) {
+        setSyncState("error");
+      }
+    }
+
+    async function startSync() {
+      const hasLocalChoices = localItemsChangedFromInitial(state.items);
+      await loadRemote();
+      if (hasLocalChoices && remoteUpdatedAt === 0) await saveRemote();
+      syncTimer = setInterval(loadRemote, SYNC_INTERVAL_MS);
     }
 
     function renderStats() {
@@ -764,14 +947,12 @@
 
     function renderBalance() {
       const groups = byGroup(takenItems());
-      const total = Math.max(groups.drink + groups.food + groups.extra, 1);
+      const total = Math.max(groups.drink + groups.food, 1);
       document.getElementById("barDrink").style.width = (groups.drink / total * 100) + "%";
       document.getElementById("barFood").style.width = (groups.food / total * 100) + "%";
-      document.getElementById("barExtra").style.width = (groups.extra / total * 100) + "%";
       document.getElementById("legend").innerHTML = `
         <span><i class="dot" style="background:var(--blue)"></i>${categoryLabel("bere")} ${Math.round(groups.drink / total * 100)}%</span>
         <span><i class="dot" style="background:var(--coral)"></i>${state.lang === "en" ? "Food" : "Mangiare"} ${Math.round(groups.food / total * 100)}%</span>
-        <span><i class="dot" style="background:var(--sage)"></i>${categoryLabel("extra")} ${Math.round(groups.extra / total * 100)}%</span>
       `;
     }
 
@@ -784,7 +965,7 @@
 
     function renderTips() {
       const groups = byGroup(takenItems());
-      const total = Math.max(groups.drink + groups.food + groups.extra, 1);
+      const total = Math.max(groups.drink + groups.food, 1);
       const drinkRatio = groups.drink / total;
       const foodRatio = groups.food / total;
       const tips = [];
@@ -879,6 +1060,7 @@
       renderTabs();
       renderItems();
       document.getElementById("freeOnly").checked = state.freeOnly;
+      setSyncState(syncState);
     }
 
     function toast(message) {
@@ -988,14 +1170,15 @@
     });
 
     document.getElementById("resetBtn").addEventListener("click", () => {
-      if (confirm(l().cleanConfirm)) {
-        state.items = initialItems;
+      if (confirm(l().sharedResetConfirm)) {
+        state.items = cloneItems(initialItems);
         localStorage.removeItem(STORAGE_KEY);
-        render();
+        save();
       }
     });
 
     render();
+    startSync();
   </script>
 </body>
 </html>
