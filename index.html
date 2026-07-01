@@ -282,28 +282,6 @@
       gap: 10px;
     }
 
-    .reset-zone {
-      display: grid;
-      gap: 8px;
-      justify-items: start;
-      margin-top: 18px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-    }
-
-    .reset-zone p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-      max-width: 560px;
-    }
-
-    .reset-final {
-      background: #ffe3dc;
-      border-color: #f3b8a9;
-      color: #6f2d20;
-    }
-
     .item {
       display: grid;
       gap: 10px;
@@ -501,10 +479,6 @@
           </div>
         </div>
         <div class="grid" id="items"></div>
-        <div class="reset-zone">
-          <button class="danger reset-final" id="resetBtn" type="button">↺ Riparti pulito</button>
-          <p id="resetHint">Usalo solo se bisogna cancellare tutte le scelte e ripartire da zero per tutti.</p>
-        </div>
       </section>
     </section>
   </main>
@@ -535,7 +509,6 @@
         share: "↗ Condividi stato",
         copy: "⧉ Copia riepilogo",
         freeOnly: "Solo libere",
-        reset: "↺ Riparti pulito",
         bring: "Lo porto io",
         broughtBy: "Porta",
         free: "Libera",
@@ -545,11 +518,6 @@
         added: "Proposta aggiunta.",
         copiedLink: "Link con stato copiato.",
         copiedSummary: "Riepilogo copiato.",
-        cleanConfirm: "Vuoi ripartire dalla lista iniziale su questo dispositivo?",
-        sharedResetConfirm: "Vuoi ripartire dalla lista iniziale per tutti?",
-        resetHint: "Usalo solo se bisogna cancellare tutte le scelte e ripartire da zero per tutti.",
-        resetConfirmOne: "Sei sicuro che vuoi cancellare tutti i dati della lista?",
-        resetConfirmTwo: "Ultima conferma: questa azione cancella le scelte per tutti. Procedo?",
         emptyTitle: "Niente qui",
         emptyText: "Cambia filtro o aggiungi una proposta.",
         stillFree: "Ancora liberi:",
@@ -596,7 +564,6 @@
         share: "↗ Share status",
         copy: "⧉ Copy summary",
         freeOnly: "Free only",
-        reset: "↺ Start fresh",
         bring: "I'll bring it",
         broughtBy: "Bringing",
         free: "Release",
@@ -606,8 +573,6 @@
         added: "Proposal added.",
         copiedLink: "Status link copied.",
         copiedSummary: "Summary copied.",
-        cleanConfirm: "Reset this device to the starting list?",
-        sharedResetConfirm: "Reset the starting list for everyone?",
         emptyTitle: "Nothing here",
         emptyText: "Change filter or add a proposal.",
         stillFree: "Still free:",
@@ -1046,8 +1011,6 @@
       document.getElementById("shareBtn").textContent = l().share;
       document.getElementById("copyBtn").textContent = l().copy;
       document.getElementById("freeOnlyLabel").textContent = l().freeOnly;
-      document.getElementById("resetBtn").textContent = l().reset;
-      document.getElementById("resetHint").textContent = l().resetHint;
     }
 
     function render() {
@@ -1159,14 +1122,6 @@
         ...state.items.filter(item => !item.takenBy.trim()).slice(0, 12).map(item => `• ${itemName(item)}`)
       ];
       copyText(lines.join("\n"), l().copiedSummary);
-    });
-
-    document.getElementById("resetBtn").addEventListener("click", () => {
-      if (confirm(l().resetConfirmOne) && confirm(l().resetConfirmTwo)) {
-        state.items = cloneItems(initialItems);
-        localStorage.removeItem(STORAGE_KEY);
-        save();
-      }
     });
 
     render();
